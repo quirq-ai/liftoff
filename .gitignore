@@ -1,0 +1,3 @@
+node_modules/
+# Clones of the spacehub projects, with their own history and syncing.
+hub/

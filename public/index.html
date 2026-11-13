@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Liftoff</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Liftoff, all apps">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path class="brand-flame" d="M11 25.5h10"/>
+        <path class="brand-ship" d="M16 4.5c4 3.6 5.5 8 5.5 12.5v3.5h-11V17c0-4.500 1.500-8.900 5.500-12.500z"/>
+        <circle class="brand-window" cx="16" cy="13" r="2"/>
+      </svg>
+      <span class="brand-name">Liftoff</span>
+      <span class="brand-tag">Launchpad deploy console</span>
+    </a>
+    <div class="topbar-status" id="topbar-status"></div>
+  </header>
+
+  <div class="shell">
+    <nav class="sidebar" aria-label="Apps">
+      <a class="app-item queue-link" id="queue-link" href="#/queue">
+        <span class="dot" id="queue-dot"></span>
+        <span class="app-item-text">
+          <span class="app-item-name">Queue</span>
+          <span class="app-item-meta" id="queue-meta">Nothing running or waiting</span>
+        </span>
+      </a>
+      <div class="sidebar-head">
+        <span class="eyebrow">Apps</span>
+        <button class="btn btn-quiet btn-small" id="add-app" type="button">Add app</button>
+      </div>
+      <ul class="app-list" id="app-list"></ul>
+    </nav>
+    <main id="main" tabindex="-1"></main>
+  </div>
+
+  <dialog id="app-dialog" class="dialog" aria-labelledby="app-dialog-title">
+    <form id="app-form" method="dialog" novalidate>
+      <header class="dialog-head">
+        <h2 id="app-dialog-title">Add an app</h2>
+        <button class="btn btn-quiet btn-icon" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <div class="dialog-body">
+        <section class="paste" id="paste-section">
+          <label for="f-commands">Paste the commands Launchpad shows for the app</label>
+          <textarea id="f-commands" rows="3" spellcheck="false" placeholder="docker login registry.xo.builders -u xo-my-app-xo-abc123+push&#10;docker build --platform linux/amd64 -t registry.xo.builders/my-app-xo-abc123/app:latest .&#10;docker push registry.xo.builders/my-app-xo-abc123/app:latest"></textarea>
+          <p class="hint" id="paste-result">Liftoff fills in the fields below from them.</p>
+        </section>
+
+        <div class="field">
+          <label for="f-name">Name</label>
+          <input id="f-name" name="name" type="text" autocomplete="off" maxlength="80">
+          <p class="field-error" data-for="name"></p>
+        </div>
+
+        <div class="field">
+          <label for="f-image">Image</label>
+          <input id="f-image" name="image" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="registry.xo.builders/my-app-xo-abc123/app:latest">
+          <p class="field-error" data-for="image"></p>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="f-username">Push username</label>
+            <input id="f-username" name="username" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="xo-my-app-xo-abc123+push">
+            <p class="field-error" data-for="username"></p>
+          </div>
+          <div class="field">
+            <label for="f-password">Push password</label>
+            <div class="input-with-button">
+              <input id="f-password" name="password" type="password" class="mono" autocomplete="new-password" spellcheck="false">
+              <button class="btn btn-quiet btn-small" type="button" data-reveal="f-password">Show</button>
+            </div>
+            <p class="hint" id="password-hint"></p>
+            <p class="field-error" data-for="password"></p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f-contextDir">Source folder</label>
+          <input id="f-contextDir" name="contextDir" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="D:\projects\my-app">
+          <p class="hint" id="folder-result">The folder with the Dockerfile. Copy its path from File Explorer's address bar.</p>
+          <p class="field-error" data-for="contextDir"></p>
+        </div>
+
+        <details class="advanced">
+          <summary>More settings</summary>
+          <div class="field-row">
+            <div class="field">
+              <label for="f-platform">Platform</label>
+              <input id="f-platform" name="platform" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="linux/amd64">
+              <p class="field-error" data-for="platform"></p>
+            </div>
+            <div class="field">
+              <label for="f-dockerfile">Dockerfile, if not <span class="mono">Dockerfile</span></label>
+              <input id="f-dockerfile" name="dockerfile" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="deploy/prod.Dockerfile">
+              <p class="field-error" data-for="dockerfile"></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-buildFlags">Extra build flags</label>
+            <input id="f-buildFlags" name="buildFlags" type="text" class="mono" autocomplete="off" spellcheck="false" placeholder="--build-arg NODE_ENV=production --target runner">
+            <p class="hint">Added to <span class="mono">docker build</span>. They are saved as plain text and show up in logs, so no secrets here.</p>
+            <p class="field-error" data-for="buildFlags"></p>
+          </div>
+          <div class="field">
+            <label for="f-liveUrl">Live address</label>
+            <input id="f-liveUrl" name="liveUrl" type="url" class="mono" autocomplete="off" spellcheck="false" placeholder="https://my-app-xo-abc123.apps.hello-xo.nl">
+            <p class="hint">Optional. Liftoff shows whether the deployed app answers there.</p>
+            <p class="field-error" data-for="liveUrl"></p>
+          </div>
+        </details>
+
+        <p class="form-error" id="app-form-error" role="alert"></p>
+      </div>
+
+      <footer class="dialog-foot">
+        <button class="btn btn-danger-quiet" type="button" id="delete-app" hidden>Remove app</button>
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn btn-primary" type="submit" id="save-app">Add app</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="password-dialog" class="dialog dialog-narrow" aria-labelledby="password-dialog-title">
+    <form id="password-form" method="dialog" novalidate>
+      <header class="dialog-head">
+        <h2 id="password-dialog-title">Push password</h2>
+        <button class="btn btn-quiet btn-icon" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="p-password">Password for <span class="mono" id="p-username"></span></label>
+          <div class="input-with-button">
+            <input id="p-password" type="password" class="mono" autocomplete="new-password" spellcheck="false">
+            <button class="btn btn-quiet btn-small" type="button" data-reveal="p-password">Show</button>
+          </div>
+          <p class="hint" id="p-hint"></p>
+          <p class="field-error" data-for="p-password"></p>
+        </div>
+      </div>
+      <footer class="dialog-foot">
+        <button class="btn btn-danger-quiet" type="button" id="forget-password" hidden>Forget password</button>
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn btn-primary" type="submit">Save and test</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog dialog-narrow" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <header class="dialog-head"><h2 id="confirm-title"></h2></header>
+      <div class="dialog-body"><p id="confirm-text"></p></div>
+      <footer class="dialog-foot">
+        <span class="spacer"></span>
+        <button class="btn" value="cancel">Cancel</button>
+        <button class="btn btn-danger" value="ok" id="confirm-ok"></button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
